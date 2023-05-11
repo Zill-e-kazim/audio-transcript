@@ -14,7 +14,7 @@ const api = ky.extend({
   prefixUrl:
     process.env.NODE_ENV === "development"
       ? "http://localhost:4000"
-      : "http://54.211.18.10/:4000",
+      : "http://54.211.18.10:4000",
 });
 const mimeType = "audio/wav";
 
