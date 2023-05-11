@@ -11,7 +11,10 @@ import { Button, Container, Card, Form, Row } from "react-bootstrap";
 
 console.log(process.env.NODE_ENV);
 const api = ky.extend({
-  prefixUrl: process.env.NODE_ENV === "development" ? "http://localhost:4000" : "http://44.202.4.202:4000",
+  prefixUrl:
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:4000"
+      : "http://54.211.18.10/:4000",
 });
 const mimeType = "audio/wav";
 
