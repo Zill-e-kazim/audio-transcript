@@ -1,5 +1,5 @@
 import ky from "ky";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Badge,
   Button,
@@ -35,7 +35,9 @@ function App() {
   const [reloadData, setReloadData] = useState<boolean>(true);
   const { clearBlobUrl, status, startRecording, stopRecording, mediaBlobUrl } =
     useReactMediaRecorder({
-      audio: true,
+      audio: {
+        sampleSize: 48000,
+      },
       mediaRecorderOptions: {
         mimeType: mimeType,
       },
