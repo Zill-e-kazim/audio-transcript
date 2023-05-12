@@ -70,6 +70,7 @@ function App() {
     });
     setReloadData(true);
     setIsSubmitting(false);
+    clearBlobUrl();
   };
   return (
     <Container>
