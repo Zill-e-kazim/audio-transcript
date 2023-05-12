@@ -8,8 +8,8 @@ import { connect } from "extendable-media-recorder-wav-encoder";
 import ky from "ky";
 import { useState, useEffect, useRef } from "react";
 import { Button, Container, Card, Form, Row } from "react-bootstrap";
+import Spinner from "react-bootstrap/Spinner";
 
-console.log(process.env.NODE_ENV);
 const api = ky.extend({
   prefixUrl:
     process.env.NODE_ENV === "development"
@@ -27,6 +27,7 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [recordingMessage, setRecordingMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [data, setData] = useState<IData>({
     fileName: "",
@@ -104,6 +105,7 @@ function App() {
   };
 
   const onSubmit = async () => {
+    setIsSubmitting(true);
     if (recordedChunks.length === 0) {
       console.warn("No audio recorded");
       return;
@@ -118,6 +120,7 @@ function App() {
       body: formData,
     });
     setReloadData(true);
+    setIsSubmitting(false);
     setRecordedChunks([]);
   };
   return (
@@ -188,11 +191,12 @@ function App() {
                 <Button
                   className="mt-3"
                   onClick={onSubmit}
-                  disabled={isComplete}
+                  disabled={isComplete || isSubmitting}
                 >
                   Submit
                 </Button>
               </div>
+              {isSubmitting && <Spinner></Spinner>}
               <div>{recordingMessage}</div>
             </Form>
           </Card.Body>
