@@ -37,6 +37,7 @@ function App() {
 
   const mediaRecorder = useRef<IMediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
+  const mediaStream = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (reloadData) {
@@ -60,10 +61,10 @@ function App() {
         if (!mediaRecorder.current) {
           await register(await connect());
 
-          const stream = await navigator.mediaDevices.getUserMedia({
+          mediaStream.current = await navigator.mediaDevices.getUserMedia({
             audio: true,
           });
-          const mediaRecoderObject = new MediaRecorder(stream, {
+          const mediaRecoderObject = new MediaRecorder(mediaStream.current, {
             mimeType,
           });
 
@@ -122,6 +123,11 @@ function App() {
     setReloadData(true);
     setIsSubmitting(false);
     setRecordedChunks([]);
+    if (mediaStream.current) {
+      mediaStream.current
+        .getTracks() // get all tracks from the MediaStream
+        .forEach((track) => track.stop());
+    }
   };
   return (
     <Container>
