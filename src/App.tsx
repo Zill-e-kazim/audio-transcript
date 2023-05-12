@@ -34,7 +34,12 @@ function App() {
   });
   const [reloadData, setReloadData] = useState<boolean>(true);
   const { clearBlobUrl, status, startRecording, stopRecording, mediaBlobUrl } =
-    useReactMediaRecorder({ audio: true });
+    useReactMediaRecorder({
+      audio: true,
+      mediaRecorderOptions: {
+        mimeType: mimeType,
+      },
+    });
 
   useEffect(() => {
     if (reloadData) {
@@ -108,7 +113,7 @@ function App() {
               <Form.Group>
                 <Form.Label>Audio</Form.Label>
                 {mediaBlobUrl ? (
-                  <audio src={mediaBlobUrl} controls />
+                  <audio src={mediaBlobUrl} controls={true} />
                 ) : (
                   <span>No audio recorded</span>
                 )}
