@@ -133,7 +133,7 @@ function App() {
               </Button>
               {mediaBlobUrl && (
                 <Button variant="primary" onClick={clearBlobUrl}>
-                  Record Again
+                  Clear recording
                 </Button>
               )}
               <br></br>
