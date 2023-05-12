@@ -36,7 +36,7 @@ function App() {
   const { clearBlobUrl, status, startRecording, stopRecording, mediaBlobUrl } =
     useReactMediaRecorder({
       audio: {
-        sampleSize: 48000,
+        sampleSize: 22050,
       },
       mediaRecorderOptions: {
         mimeType: mimeType,
