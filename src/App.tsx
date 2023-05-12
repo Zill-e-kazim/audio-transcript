@@ -1,20 +1,22 @@
-import {
-  IBlobEvent,
-  IMediaRecorder,
-  MediaRecorder,
-  register,
-} from "extendable-media-recorder";
-import { connect } from "extendable-media-recorder-wav-encoder";
 import ky from "ky";
-import { useState, useEffect, useRef } from "react";
-import { Button, Container, Card, Form, Row } from "react-bootstrap";
-import Spinner from "react-bootstrap/Spinner";
+import { useState, useEffect } from "react";
+import {
+  Badge,
+  Button,
+  Container,
+  Card,
+  Form,
+  Row,
+  Spinner,
+} from "react-bootstrap";
+import { useReactMediaRecorder } from "react-media-recorder-2";
 
+const prefixUrl =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:4000"
+    : "http://54.211.18.10:4000";
 const api = ky.extend({
-  prefixUrl:
-    process.env.NODE_ENV === "development"
-      ? "http://localhost:4000"
-      : "http://54.211.18.10:4000",
+  prefixUrl,
 });
 const mimeType = "audio/wav";
 
@@ -24,9 +26,6 @@ interface IData {
 }
 
 function App() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-  const [recordingMessage, setRecordingMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isComplete, setIsComplete] = useState<boolean>(false);
   const [data, setData] = useState<IData>({
@@ -34,10 +33,8 @@ function App() {
     transcript: "",
   });
   const [reloadData, setReloadData] = useState<boolean>(true);
-
-  const mediaRecorder = useRef<IMediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
-  const mediaStream = useRef<MediaStream | null>(null);
+  const { clearBlobUrl, status, startRecording, stopRecording, mediaBlobUrl } =
+    useReactMediaRecorder({ audio: true });
 
   useEffect(() => {
     if (reloadData) {
@@ -55,64 +52,15 @@ function App() {
     }
   }, [reloadData]);
 
-  useEffect(() => {
-    const startRecording = async () => {
-      try {
-        if (!mediaRecorder.current) {
-          await register(await connect());
-
-          mediaStream.current = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-          });
-          const mediaRecoderObject = new MediaRecorder(mediaStream.current, {
-            mimeType,
-          });
-
-          mediaRecorder.current = mediaRecoderObject;
-
-          mediaRecorder.current.addEventListener(
-            "dataavailable",
-            handleDataAvailable
-          );
-        }
-
-        mediaRecorder.current.start();
-      } catch (err) {
-        console.error("Error starting recording:", err);
-        setIsRecording(false);
-      }
-    };
-
-    if (isRecording) {
-      startRecording();
-      setRecordingMessage("Audio is recording");
-    } else {
-      if (mediaRecorder.current) {
-        mediaRecorder.current.stop();
-      }
-      setRecordingMessage("");
-    }
-  }, [isRecording]);
-
-  const handleDataAvailable = (event: IBlobEvent) => {
-    if (event.data.size > 0) {
-      audioChunks.current.push(event.data);
-      setRecordedChunks([...audioChunks.current]);
-    }
-  };
-
-  const onReset = () => {
-    setRecordedChunks([]);
-  };
-
   const onSubmit = async () => {
-    setIsSubmitting(true);
-    if (recordedChunks.length === 0) {
+    if (!mediaBlobUrl) {
       console.warn("No audio recorded");
       return;
     }
 
-    const file = new File(recordedChunks, data.fileName, { type: mimeType });
+    setIsSubmitting(true);
+    const audioBlob = await fetch(mediaBlobUrl).then((r) => r.blob());
+    const file = new File([audioBlob], data.fileName, { type: mimeType });
     const formData = new FormData();
     formData.set("fileName", `${data.fileName}.wav`);
     formData.set("recording", file);
@@ -122,19 +70,15 @@ function App() {
     });
     setReloadData(true);
     setIsSubmitting(false);
-    setRecordedChunks([]);
-    if (mediaStream.current) {
-      mediaStream.current
-        .getTracks() // get all tracks from the MediaStream
-        .forEach((track) => track.stop());
-    }
   };
   return (
     <Container>
       <Row>
         <Card className="mt-3">
           <Card.Header>
-            <h1>Audio Transcript</h1>
+            <h1>
+              Audio Transcript <Badge bg="secondary">{status}</Badge>
+            </h1>
             {isComplete && (
               <Card.Subtitle className="mb-2 text-muted" as="h6">
                 All completed
@@ -161,38 +105,37 @@ function App() {
                 />
               </Form.Group>
               <Form.Group>
-                <Form.Label>Audio:</Form.Label>
-                {recordedChunks.length > 0 ? (
-                  <audio
-                    src={URL.createObjectURL(
-                      new Blob(recordedChunks, { type: mimeType })
-                    )}
-                    controls
-                  />
+                <Form.Label>Audio</Form.Label>
+                {mediaBlobUrl ? (
+                  <audio src={mediaBlobUrl} controls />
                 ) : (
                   <span>No audio recorded</span>
                 )}
               </Form.Group>
               <Button
                 variant="primary"
-                onClick={() => setIsRecording(true)}
-                disabled={isComplete || isRecording}
+                onClick={startRecording}
+                disabled={
+                  isComplete || (status !== "idle" && status !== "stopped")
+                }
+                className="ml-2"
               >
                 Start Recording
-              </Button>{" "}
+              </Button>
               <Button
                 variant="primary"
-                onClick={() => setIsRecording(false)}
-                disabled={!isRecording}
+                onClick={stopRecording}
+                disabled={status !== "recording"}
+                className="ml-2"
               >
                 Stop Recording
-              </Button>{" "}
-              {recordedChunks.length > 0 && (
-                <Button variant="primary" onClick={onReset}>
+              </Button>
+              {mediaBlobUrl && (
+                <Button variant="primary" onClick={clearBlobUrl}>
                   Record Again
                 </Button>
               )}
-              <br></br>{" "}
+              <br></br>
               <div>
                 <Button
                   className="mt-3"
@@ -203,7 +146,6 @@ function App() {
                 </Button>
               </div>
               {isSubmitting && <Spinner></Spinner>}
-              <div>{recordingMessage}</div>
             </Form>
           </Card.Body>
         </Card>
