@@ -14,7 +14,7 @@ import { useReactMediaRecorder } from "react-media-recorder-2";
 const prefixUrl =
   process.env.NODE_ENV === "development"
     ? "http://localhost:4000"
-    : "http://54.211.18.10:4000";
+    : "http://54.211.189.120:4000";
 const api = ky.extend({
   prefixUrl,
 });
